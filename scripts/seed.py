@@ -38,6 +38,10 @@ DAYS_SPAN = 730
 
 
 def main():
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("Usage: python scripts/seed.py [--resume]")
+        print("  --resume   Continue from existing count instead of truncating")
+        return
     resume = "--resume" in sys.argv
 
     conn = psycopg2.connect(DATABASE_URL)

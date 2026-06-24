@@ -61,7 +61,7 @@ The seed script (`scripts/seed.py`):
 |----------|--------|--------|-------------|
 | `/products` | GET | `cursor`, `limit`, `category` | Paginated product list |
 | `/categories` | GET | — | Distinct categories |
-| `/ui` | GET | — | Simple browser UI |
+| (frontend.html) | — | `?api=` param | Standalone browser UI |
 
 ### `/products` example
 
@@ -115,7 +115,7 @@ Pass `next_cursor` as the `cursor` parameter for the next page.
    uvicorn app.main:app --reload
    ```
 
-Visit `http://localhost:8000/ui` for the browser UI.
+Open `frontend.html?api=http://localhost:8000` in your browser for the UI.
 
 ## Notes
 

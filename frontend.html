@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<!--
+  Product Catalog Frontend
+  ─────────────────────────
+  Open in browser with:
+    frontend.html?api=http://localhost:8000
+  Or without ?api= to auto-detect the API server.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Catalog</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,-apple-system,sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh;-webkit-font-smoothing:antialiased}
+  .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
+
+  /* ── Header ── */
+  .header{background:linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%);color:#fff;padding:28px 0 22px;position:sticky;top:0;z-index:50;box-shadow:0 2px 16px rgba(0,0,0,.18)}
+  .header-inner{max-width:1120px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .header-left h1{font-size:1.35rem;font-weight:800;letter-spacing:-.025em;background:linear-gradient(90deg,#fff,#c4b5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .header-left .sub{font-size:.75rem;color:rgba(255,255,255,.5);margin-top:2px;letter-spacing:.02em}
+  .header-right{display:flex;align-items:center;gap:12px;font-size:.75rem;color:rgba(255,255,255,.55)}
+
+  /* ── Container ── */
+  .container{max-width:1120px;margin:0 auto;padding:20px 24px 40px}
+
+  /* ── Filter bar ── */
+  .filter-bar{background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+  .filter-bar label{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#888;display:flex;align-items:center;gap:6px}
+  .filter-bar select{padding:8px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:.875rem;background:#fff;min-width:180px;cursor:pointer;transition:border-color .2s,box-shadow .2s;color:#1a1a2e;font-family:inherit}
+  .filter-bar select:focus{outline:none;border-color:#302b63;box-shadow:0 0 0 3px rgba(48,43,99,.12)}
+  .filter-bar .spacer{flex:1}
+  .filter-bar .count-badge{font-size:.8rem;color:#888;padding:4px 10px;background:#f3f4f6;border-radius:20px;font-weight:500;white-space:nowrap}
+  .filter-bar .count-badge strong{color:#302b63}
+  .btn{font-family:inherit;font-weight:600;font-size:.85rem;padding:9px 20px;border-radius:8px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;border:none;white-space:nowrap}
+  .btn-primary{background:#302b63;color:#fff}
+  .btn-primary:hover{background:#24243e;transform:translateY(-1px);box-shadow:0 4px 12px rgba(48,43,99,.25)}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-ghost{background:transparent;color:#666;border:1.5px solid #e5e7eb}
+  .btn-ghost:hover{background:#f9fafb;border-color:#d1d5db}
+  .btn-ghost:disabled{opacity:.4;cursor:not-allowed}
+
+  /* ── New-data banner ── */
+  .new-data-banner{display:none;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:10px 20px;border-radius:10px;margin-bottom:16px;font-size:.85rem;align-items:center;gap:12px;animation:slideDown .35s ease}
+  .new-data-banner.visible{display:flex}
+  .new-data-banner button{margin-left:auto;background:#92400e;color:#fef3c7;border:none;padding:5px 14px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer}
+  .new-data-banner button:hover{background:#78350f}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── Grid ── */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+
+  /* ── Card ── */
+  .card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.05);transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column;animation:fadeUp .4s ease both;border:1px solid rgba(0,0,0,.03)}
+  .card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.07)}
+  .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+  .badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .badge-electronics{background:#e3f2fd;color:#1565c0}
+  .badge-books{background:#fce4ec;color:#c62828}
+  .badge-fashion{background:#f3e5f5;color:#7b1fa2}
+  .badge-home{background:#e8f5e9;color:#2e7d32}
+  .badge-sports{background:#fff3e0;color:#e65100}
+  .card-id{font-size:.68rem;color:#bbb;font-weight:500;font-variant-numeric:tabular-nums}
+  .card h3{font-size:1rem;font-weight:600;color:#1a1a2e;margin-bottom:2px;line-height:1.3}
+  .card .price{font-size:1.3rem;font-weight:700;color:#302b63;margin:8px 0 6px;letter-spacing:-.02em}
+  .card .price::before{content:'$';font-size:.9rem;font-weight:600;opacity:.7}
+  .card-footer{display:flex;gap:16px;font-size:.72rem;color:#aaa;margin-top:auto;padding-top:10px;border-top:1px solid #f3f4f6}
+  .card-footer span{display:flex;align-items:center;gap:4px}
+  .card-footer .icon{opacity:.5;font-size:.85rem}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .card:nth-child(1){animation-delay:0ms}
+  .card:nth-child(2){animation-delay:40ms}
+  .card:nth-child(3){animation-delay:80ms}
+  .card:nth-child(4){animation-delay:120ms}
+  .card:nth-child(5){animation-delay:160ms}
+  .card:nth-child(6){animation-delay:200ms}
+
+  /* ── Loading / empty ── */
+  .loading-dock{text-align:center;padding:32px 16px}
+  .spinner{display:inline-block;width:28px;height:28px;border:3px solid #e5e7eb;border-top-color:#302b63;border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty-state{text-align:center;padding:60px 16px;color:#bbb}
+  .empty-state .emoji{font-size:2.5rem;margin-bottom:12px;display:block}
+  .empty-state p{font-size:.9rem}
+
+  /* ── Footer ── */
+  .pagination-footer{display:flex;flex-direction:column;align-items:center;gap:12px;margin:24px 0 8px}
+  .pagination-footer .status{font-size:.82rem;color:#999}
+  .pagination-footer .actions{display:flex;gap:10px}
+
+  /* ── Scroll sentinel ── */
+  #scroll-sentinel{height:1px;width:100%}
+</style>
+</head>
+<body>
+
+<!-- ─── Header ─── -->
+<header class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <h1>Product Catalog</h1>
+      <div class="sub">200,000 products &middot; cursor-paginated &middot; snapshot-consistent</div>
+    </div>
+    <div class="header-right">
+      <span id="headerCount">—</span>
+      <span>&middot;</span>
+      <span>Neon + FastAPI</span>
+    </div>
+  </div>
+</header>
+
+<!-- ─── Main ─── -->
+<main class="container">
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <label for="catFilter">📂 Category</label>
+    <select id="catFilter"><option value="">All Categories</option></select>
+    <div class="spacer"></div>
+    <span class="count-badge" id="countBadge">Showing <strong id="shownCount">0</strong> products</span>
+    <button class="btn btn-ghost" id="resetBtn" disabled>↻ Reset</button>
+  </div>
+
+  <!-- New data banner -->
+  <div class="new-data-banner" id="newDataBanner">
+    <span>📦 New products have been added since you started browsing</span>
+    <button id="refreshBtn">Refresh</button>
+  </div>
+
+  <!-- Grid -->
+  <div class="grid" id="productGrid"></div>
+  <div id="scroll-sentinel"></div>
+
+  <!-- Footer -->
+  <div class="pagination-footer" id="paginationFooter">
+    <div class="actions">
+      <button class="btn btn-primary" id="loadBtn">Load More ↓</button>
+    </div>
+    <div class="status" id="statusMsg">Ready</div>
+  </div>
+</main>
+
+<script>
+(function() {
+  // ── Config ──────────────────────────────────────────────
+  // Set your API URL here, or pass ?api= in the URL.
+  // If not set, tries window.location.origin first, then
+  // auto-detects common dev ports (8000, 8080).
+  // Examples:
+  //   frontend.html?api=http://localhost:8000
+  //   frontend.html?api=https://my-api.onrender.com
+  const urlParams = new URLSearchParams(window.location.search);
+  let API = urlParams.get('api') || window.location.origin;
+
+  // Auto-detect API — skip the origin URL if it's a known
+  // dev-server port (Live Server, Vite, etc.) or file://.
+  const DEV_PORTS = [5500, 3000, 5173, 4200, 3001];
+  function looksLikeDevServer(url) {
+    try { const u = new URL(url); return u.protocol === 'file:' || DEV_PORTS.includes(Number(u.port)); }
+    catch { return true; }
+  }
+
+  async function detectAPI() {
+    const candidates = [];
+    if (!looksLikeDevServer(API)) candidates.push(API);
+    candidates.push('http://localhost:8000', 'http://127.0.0.1:8000', 'http://localhost:8080');
+    const seen = new Set();
+    for (const url of candidates) {
+      const key = url.replace(/\/+$/, '');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      try {
+        const res = await fetch(url + '/categories', { signal: AbortSignal.timeout(2000) });
+        if (res.ok) { API = url; return true; }
+      } catch (_) { /* expected if not the API */ }
+    }
+    return false;
+  }
+
+  let apiReady = false;
+  if (urlParams.has('api')) { apiReady = true; }
+  // ────────────────────────────────────────────────────────
+  let cursor = null;
+  let hasMore = true;
+  let loading = false;
+  let currentCategory = '';
+  let shown = 0;
+  let allTimeMax = null;       // snapshot created_at from initial request
+  let initialCategory = '';    // category active when session started
+
+  const $ = (s) => document.querySelector(s);
+  const grid = $('#productGrid');
+  const loadBtn = $('#loadBtn');
+  const resetBtn = $('#resetBtn');
+  const statusMsg = $('#statusMsg');
+  const catFilter = $('#catFilter');
+  const shownCount = $('#shownCount');
+  const newBanner = $('#newDataBanner');
+  const refreshBtn = $('#refreshBtn');
+  const sentinel = $('#scroll-sentinel');
+
+  /* ─── Intersection Observer for auto-load ─── */
+  let observer = null;
+  function setupObserver() {
+    if (observer) observer.disconnect();
+    observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && hasMore && !loading) load();
+    }, { rootMargin: '400px' });
+    observer.observe(sentinel);
+  }
+
+  /* ─── Helpers ─── */
+  function badgeClass(cat) { return 'badge badge-' + cat.toLowerCase(); }
+
+  function fmtDate(d) {
+    return new Date(d).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    });
+  }
+
+  function esc(txt) {
+    const d = document.createElement('div');
+    d.textContent = txt;
+    return d.innerHTML;
+  }
+
+  /* ─── Render products ─── */
+  function render(products, prepend) {
+    const fragment = document.createDocumentFragment();
+    products.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="${badgeClass(p.category)}">${p.category}</span>
+          <span class="card-id">#${p.id.toLocaleString()}</span>
+        </div>
+        <h3>${esc(p.name)}</h3>
+        <div class="price">${p.price.toFixed(2)}</div>
+        <div class="card-footer">
+          <span><span class="icon">📅</span> ${fmtDate(p.created_at)}</span>
+          <span><span class="icon">🕐</span> ${fmtDate(p.updated_at)}</span>
+        </div>`;
+      fragment.appendChild(card);
+    });
+    if (prepend && grid.firstChild) {
+      grid.insertBefore(fragment, grid.firstChild);
+    } else {
+      grid.appendChild(fragment);
+    }
+    shown += products.length;
+    shownCount.textContent = shown.toLocaleString();
+    resetBtn.disabled = (shown === 0);
+  }
+
+  /* ─── Fetch products ─── */
+  async function load() {
+    if (loading || !hasMore) return;
+    loading = true;
+    loadBtn.disabled = true;
+    loadBtn.innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px"></span> Loading';
+
+    try {
+      const params = new URLSearchParams();
+      if (cursor) params.set('cursor', cursor);
+      params.set('limit', '48');
+      if (currentCategory) params.set('category', currentCategory);
+
+      const res = await fetch(`${API}/products?${params.toString()}`);
+      const data = await res.json();
+
+      render(data.products);
+
+      // On first load, capture snapshot info for the fresh-data check
+      if (!cursor && data.next_cursor) {
+        try {
+          const payload = JSON.parse(atob(data.next_cursor));
+          allTimeMax = payload.s;
+        } catch (_) {}
+      }
+
+      cursor = data.next_cursor;
+      hasMore = data.has_more;
+      statusMsg.textContent = hasMore
+        ? 'Scroll down or click "Load More"'
+        : '🎉 All ' + shown.toLocaleString() + ' products loaded';
+      loadBtn.innerHTML = hasMore ? 'Load More ↓' : '✓ All Loaded';
+      if (!hasMore) loadBtn.disabled = true;
+
+    } catch (err) {
+      console.error(err);
+      statusMsg.textContent = '⚠ Error loading products. Check console.';
+      loadBtn.innerHTML = 'Retry ↩';
+      loadBtn.disabled = false;
+      loading = false;
+      return;
+    }
+
+    loadBtn.disabled = !hasMore;
+    loading = false;
+  }
+
+  /* ─── Check for new data (poll-based) ─── */
+  async function checkFreshData() {
+    if (!allTimeMax || !hasMore) return;
+    try {
+      const res = await fetch(`${API}/products?limit=1`);
+      const data = await res.json();
+      if (data.products.length && data.next_cursor) {
+        const payload = JSON.parse(atob(data.next_cursor));
+        if (payload.s !== allTimeMax) {
+          newBanner.classList.add('visible');
+        }
+      }
+    } catch (_) {}
+  }
+
+  /* ─── Refresh (new session) ─── */
+  function reset() {
+    cursor = null;
+    hasMore = true;
+    shown = 0;
+    allTimeMax = null;
+    grid.innerHTML = '';
+    newBanner.classList.remove('visible');
+    statusMsg.textContent = 'Reset — fetching fresh data';
+    shownCount.textContent = '0';
+    currentCategory = catFilter.value;
+    load();
+  }
+
+  /* ─── Load categories ─── */
+  async function loadCategories() {
+    try {
+      const res = await fetch(`${API}/categories`);
+      const cats = await res.json();
+      const sel = catFilter;
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        sel.appendChild(opt);
+      });
+      $('#headerCount').textContent = `${cats.length} categories`;
+    } catch (_) {}
+  }
+
+  /* ─── Events ─── */
+  loadBtn.addEventListener('click', load);
+  resetBtn.addEventListener('click', reset);
+  refreshBtn.addEventListener('click', reset);
+  catFilter.addEventListener('change', reset);
+
+  /* ─── Init ─── */
+  (async function init() {
+    if (!apiReady) {
+      statusMsg.textContent = '🔍 Detecting API server...';
+      apiReady = await detectAPI();
+    }
+    if (!apiReady) {
+      statusMsg.innerHTML = '⚠ Could not reach the API. ' +
+        'Start the backend: <code>uvicorn app.main:app --reload --port 8000</code> ' +
+        'then open this page with <code>?api=http://localhost:8000</code>';
+      loadBtn.disabled = true;
+      return;
+    }
+    setupObserver();
+    await loadCategories();
+    await load();
+  })();
+
+  // Poll for new data every 15s
+  setInterval(checkFreshData, 15000);
+})();
+</script>
+</body>
+</html>
