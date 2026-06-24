@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from fastapi.responses import FileResponse
 
 from app.crud import get_categories, get_products
 from app.database import Base, SessionLocal, engine
@@ -28,7 +29,7 @@ def get_db():
 
 @app.get("/")
 def home():
-    return {"message": "Product Catalog API"}
+    return FileResponse("frontend.html")
 
 
 @app.get("/products", response_model=ProductListResponse)
